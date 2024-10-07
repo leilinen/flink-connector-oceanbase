@@ -24,6 +24,9 @@ import com.alipay.oceanbase.hbase.OHTableClient;
 import com.alipay.oceanbase.hbase.constants.OHConstants;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.HTableInterface;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,9 +42,12 @@ public class OBKVHBaseConnectionProvider implements ConnectionProvider {
 
     private final TableCache<HTableInterface> tableCache;
 
+    private final TableCache<KafkaProducer> producerTableCache;
+
     public OBKVHBaseConnectionProvider(OBKVHBaseConnectorOptions options) {
         this.options = options;
         this.tableCache = new TableCache<>();
+        this.producerTableCache = new TableCache<>();
     }
 
     public HTableInterface getHTableClient(TableId tableId) {
@@ -58,6 +64,20 @@ public class OBKVHBaseConnectionProvider implements ConnectionProvider {
                         throw new RuntimeException("Failed to initialize OHTableClient", e);
                     }
                 });
+    }
+
+    public KafkaProducer getKafkaProducer(String bootstrapServers) {
+        return producerTableCache.get(
+            bootstrapServers,
+            () -> {
+                // create Producer properties
+                Properties properties = new Properties();
+                properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+                properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+                properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+                return new KafkaProducer<>(properties);
+            }
+        );
     }
 
     private Configuration getConfig(String databaseName) {
@@ -92,5 +112,9 @@ public class OBKVHBaseConnectionProvider implements ConnectionProvider {
             table.close();
         }
         tableCache.clear();
+        for (KafkaProducer producer: producerTableCache.getAll()) {
+            producer.close();
+        }
+        producerTableCache.clear();
     }
 }

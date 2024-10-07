@@ -64,6 +64,18 @@ public class OBKVHBaseConnectorOptions extends ConnectorOptions {
                     .defaultValue(2885)
                     .withDescription("ODP rpc port.");
 
+    public static final ConfigOption<String> KAFKA_BOOTSTRAP_SERVERS =
+        ConfigOptions.key("properties.bootstrap.servers")
+            .stringType()
+            .defaultValue("localhost:9092")
+            .withDescription("kafka bootstrap servers");
+
+    public static final ConfigOption<String> KAFKA_TOPICS =
+        ConfigOptions.key("topics")
+            .stringType()
+            .noDefaultValue()
+            .withDescription("kafka topics");
+
     public OBKVHBaseConnectorOptions(Map<String, String> config) {
         super(config);
     }
@@ -90,5 +102,13 @@ public class OBKVHBaseConnectorOptions extends ConnectorOptions {
 
     public Integer getOdpPort() {
         return allConfig.get(ODP_PORT);
+    }
+
+    public String getKafkaBootstrapServers() {
+        return allConfig.get(KAFKA_BOOTSTRAP_SERVERS);
+    }
+
+    public String getKafkaTopics() {
+        return allConfig.get(KAFKA_TOPICS);
     }
 }

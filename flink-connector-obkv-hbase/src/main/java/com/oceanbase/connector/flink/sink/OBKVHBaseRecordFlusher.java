@@ -26,6 +26,7 @@ import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.kafka.clients.producer.KafkaProducer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -102,12 +103,14 @@ public class OBKVHBaseRecordFlusher implements RecordFlusher {
 
         flush(
                 connectionProvider.getHTableClient(tableInfo.getTableId()),
+                connectionProvider.getKafkaProducer(options.getKafkaBootstrapServers()),
                 familyPutListMap,
                 familyDeleteListMap);
     }
 
     private void flush(
             HTableInterface table,
+            KafkaProducer producer,
             Map<byte[], List<Put>> familyPutListMap,
             Map<byte[], List<Delete>> familyDeleteListMap)
             throws Exception {
